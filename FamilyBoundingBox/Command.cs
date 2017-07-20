@@ -26,7 +26,7 @@ namespace FamilyBoundingBox
     {
       BoundingBoxXYZ familyBoundingBoxXyz = null;
 
-      HashSet<ElementId> genericFormExclusionSet
+      ISet<ElementId> genericFormExclusionSet
         = new HashSet<ElementId>();
 
       familyBoundingBoxXyz
@@ -38,6 +38,10 @@ namespace FamilyBoundingBox
         = MergeSolidBoundingBoxXyz( document, 
           familyBoundingBoxXyz, 
           genericFormExclusionSet );
+      
+      familyBoundingBoxXyz
+        = MergeFamilyInstanceBoundingBoxXyz( document,
+          familyBoundingBoxXyz);
 
       return familyBoundingBoxXyz;
     }
@@ -60,7 +64,7 @@ namespace FamilyBoundingBox
     private static BoundingBoxXYZ MergeGeomCombinationBoundingBoxXyz(
       Document document,
       BoundingBoxXYZ boundingBoxXyz,
-      HashSet<ElementId> geomCombinationMembers )
+      ISet<ElementId> geomCombinationMembers )
     {
       BoundingBoxXYZ mergedResult = boundingBoxXyz;
 
@@ -80,6 +84,11 @@ namespace FamilyBoundingBox
 
         BoundingBoxXYZ geomCombinationBoundingBox 
           = geomCombination.get_BoundingBox( null );
+
+        if ( geomCombinationBoundingBox == null )
+        {
+          continue;
+        }
 
         if( mergedResult == null )
         {
@@ -118,7 +127,7 @@ namespace FamilyBoundingBox
     private static BoundingBoxXYZ MergeSolidBoundingBoxXyz(
       Document document,
       BoundingBoxXYZ boundingBoxXyz,
-      HashSet<ElementId> genericFormExclusionSet )
+      ISet<ElementId> genericFormExclusionSet )
     {
       BoundingBoxXYZ mergedResult = boundingBoxXyz;
 
@@ -141,6 +150,11 @@ namespace FamilyBoundingBox
         BoundingBoxXYZ solidBoundingBox
           = solid.get_BoundingBox( null );
 
+        if ( solidBoundingBox == null )
+        {
+          continue;
+        }
+
         if( mergedResult == null )
         {
           mergedResult = new BoundingBoxXYZ();
@@ -154,6 +168,134 @@ namespace FamilyBoundingBox
       }
 
       return mergedResult;
+    }
+
+    /// <summary>
+    /// Merge <paramref name="boundingBoxXyz"/> with the 'BoundingBoxXYZ's of
+    /// all 'FamilyInstance's in <paramref name="document"/> into a new
+    /// 'BoundingBoxXYZ'.
+    /// </summary>
+    /// <param name="document">The Revit 'Document' to search for all
+    /// 'FamilyInstance's.
+    /// <param name="boundingBoxXyz">The 'BoundingBoxXYZ' to merge with.</param>
+    /// <returns>The new merged 'BoundingBoxXYZ' of
+    /// <paramref name="boundingBoxXyz"/> and all 'FamilyInstance's
+    /// in <paramref name="document"/></returns>
+    private static BoundingBoxXYZ MergeFamilyInstanceBoundingBoxXyz(
+      Document document,
+      BoundingBoxXYZ boundingBoxXyz )
+    {
+      BoundingBoxXYZ mergedResult = boundingBoxXyz;
+
+      FilteredElementCollector familyInstanceCollector
+        = new FilteredElementCollector( document )
+        .OfClass( typeof( FamilyInstance ) );
+
+      foreach ( FamilyInstance familyInstance in familyInstanceCollector )
+      {
+        BoundingBoxXYZ familyInstanceBoundingBox
+          = ComputeFamilyInstanceBoundingBoxXyz( familyInstance );
+
+        if ( familyInstanceBoundingBox == null )
+        {
+          continue;
+        }
+
+        if ( mergedResult == null )
+        {
+          mergedResult = new BoundingBoxXYZ();
+          mergedResult.Min = familyInstanceBoundingBox.Min;
+          mergedResult.Max = familyInstanceBoundingBox.Max;
+          continue;
+        }
+
+        mergedResult = MergeBoundingBoxXyz(
+          mergedResult, familyInstanceBoundingBox );
+      }
+
+      return mergedResult;
+    }
+
+    /// <summary>
+    /// Compute the 'BoundingBoxXYZ' of <paramref name="familyInstance"/>.
+    /// 
+    /// Required because 'FamilyInstance.get_BoundingBox( null )' does not give
+    /// a tight 'BoundingBoxXYZ'.
+    /// </summary>
+    /// <param name="familyInstance">The 'FamilyInstance' to compute the
+    /// 'BoundingBoxXYZ' of.</param>
+    /// <returns>The 'BoundingBoxXYZ' of
+    /// <paramref name="familyInstance"/></returns>
+    private static BoundingBoxXYZ ComputeFamilyInstanceBoundingBoxXyz(
+      FamilyInstance familyInstance )
+    {
+      List<XYZ> points = new List<XYZ>();
+
+      Options options = new Options();
+      GeometryElement geometryElement
+        = familyInstance.get_Geometry( options );
+      foreach ( GeometryInstance geometryInstance in geometryElement )
+      {
+        foreach ( GeometryObject geometryObject in
+          geometryInstance.GetInstanceGeometry() )
+        {
+          Curve curve = geometryObject as Curve;
+          if ( curve != null )
+          {
+            points.AddRange( curve.Tessellate() );
+          }
+
+          Solid solid = geometryObject as Solid;
+          if ( solid != null )
+          {
+            foreach ( Edge edge in solid.Edges )
+            {
+              points.AddRange( edge.Tessellate() );
+            }
+          }
+        }
+      }
+
+      BoundingBoxXYZ boundingBoxXYZ
+        = ComputeBoundingBoxXYZFromPoints( points );
+
+      return boundingBoxXYZ;
+    }
+
+    /// <summary>
+    /// Compute the 'BoundingBoxXYZ' of <paramref name="points"/>.
+    /// </summary>
+    /// <param name="points">The 'XYZ' to compute the 'BoundingBoxXYZ'
+    /// of.</param>
+    /// <returns>The 'BoundingBoxXYZ' of <paramref name="points"/>.</returns>
+    private static BoundingBoxXYZ ComputeBoundingBoxXYZFromPoints(
+      IEnumerable<XYZ> points)
+    {
+      BoundingBoxXYZ boundingBoxXYZ = null;
+      if ( points.Any() )
+      {
+        double minX = Double.PositiveInfinity;
+        double minY = Double.PositiveInfinity;
+        double minZ = Double.PositiveInfinity;
+        double maxX = Double.NegativeInfinity;
+        double maxY = Double.NegativeInfinity;
+        double maxZ = Double.NegativeInfinity;
+
+        foreach ( XYZ point in points )
+        {
+          minX = Math.Min( minX, point.X );
+          minY = Math.Min( minY, point.Y );
+          minZ = Math.Min( minZ, point.Z );
+          maxX = Math.Max( maxX, point.X );
+          maxY = Math.Max( maxY, point.Y );
+          maxZ = Math.Max( maxZ, point.Z );
+        }
+
+        boundingBoxXYZ = new BoundingBoxXYZ();
+        boundingBoxXYZ.Min = new XYZ( minX, minY, minZ );
+        boundingBoxXYZ.Max = new XYZ( maxX, maxY, maxZ );
+      }
+      return boundingBoxXYZ;
     }
 
     /// <summary>
