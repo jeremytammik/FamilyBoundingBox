@@ -32,5 +32,11 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion( "2017.0.0.0" )]
-[assembly: AssemblyFileVersion( "2017.0.0.0" )]
+//
+// History:
+//
+// 2017-03-15 2017.0.0.0 initial implementation
+// 2017-07-20 2017.0.0.1 tighter bounding box calculation using FamilyInstance information
+//
+[assembly: AssemblyVersion( "2017.0.0.1" )]
+[assembly: AssemblyFileVersion( "2017.0.0.1" )]

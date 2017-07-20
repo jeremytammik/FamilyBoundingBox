@@ -218,9 +218,8 @@ namespace FamilyBoundingBox
 
     /// <summary>
     /// Compute the 'BoundingBoxXYZ' of <paramref name="familyInstance"/>.
-    /// 
-    /// Required because 'FamilyInstance.get_BoundingBox( null )' does not give
-    /// a tight 'BoundingBoxXYZ'.
+    /// Required because 'FamilyInstance.get_BoundingBox( null )' 
+    /// does not give a tight bounding box.
     /// </summary>
     /// <param name="familyInstance">The 'FamilyInstance' to compute the
     /// 'BoundingBoxXYZ' of.</param>
@@ -234,7 +233,9 @@ namespace FamilyBoundingBox
       Options options = new Options();
       GeometryElement geometryElement
         = familyInstance.get_Geometry( options );
-      foreach ( GeometryInstance geometryInstance in geometryElement )
+
+      foreach ( GeometryInstance geometryInstance 
+        in geometryElement )
       {
         foreach ( GeometryObject geometryObject in
           geometryInstance.GetInstanceGeometry() )
@@ -272,7 +273,7 @@ namespace FamilyBoundingBox
       IEnumerable<XYZ> points)
     {
       BoundingBoxXYZ boundingBoxXYZ = null;
-      if ( points.Any() )
+      if( points.Any() )
       {
         double minX = Double.PositiveInfinity;
         double minY = Double.PositiveInfinity;
@@ -299,27 +300,27 @@ namespace FamilyBoundingBox
     }
 
     /// <summary>
-    /// Merge <paramref name="boundingBoxXyz0"/> and
-    /// <paramref name="boundingBoxXyz1"/> into a new 'BoundingBoxXYZ'.
+    /// Merge <paramref name="a"/> and
+    /// <paramref name="b"/> into a new 'BoundingBoxXYZ'.
     /// </summary>
-    /// <param name="boundingBoxXyz0">A 'BoundingBoxXYZ' to merge</param>
-    /// <param name="boundingBoxXyz1">A 'BoundingBoxXYZ' to merge</param>
+    /// <param name="a">A 'BoundingBoxXYZ' to merge</param>
+    /// <param name="b">A 'BoundingBoxXYZ' to merge</param>
     /// <returns>The new merged 'BoundingBoxXYZ'.</returns>
     static BoundingBoxXYZ MergeBoundingBoxXyz(
-      BoundingBoxXYZ boundingBoxXyz0,
-      BoundingBoxXYZ boundingBoxXyz1 )
+      BoundingBoxXYZ a,
+      BoundingBoxXYZ b )
     {
       BoundingBoxXYZ mergedResult = new BoundingBoxXYZ();
 
       mergedResult.Min = new XYZ(
-        Math.Min( boundingBoxXyz0.Min.X, boundingBoxXyz1.Min.X ),
-        Math.Min( boundingBoxXyz0.Min.Y, boundingBoxXyz1.Min.Y ),
-        Math.Min( boundingBoxXyz0.Min.Z, boundingBoxXyz1.Min.Z ) );
+        Math.Min( a.Min.X, b.Min.X ),
+        Math.Min( a.Min.Y, b.Min.Y ),
+        Math.Min( a.Min.Z, b.Min.Z ) );
 
       mergedResult.Max = new XYZ(
-        Math.Max( boundingBoxXyz0.Max.X, boundingBoxXyz1.Max.X ),
-        Math.Max( boundingBoxXyz0.Max.Y, boundingBoxXyz1.Max.Y ),
-        Math.Max( boundingBoxXyz0.Max.Z, boundingBoxXyz1.Max.Z ) );
+        Math.Max( a.Max.X, b.Max.X ),
+        Math.Max( a.Max.Y, b.Max.Y ),
+        Math.Max( a.Max.Z, b.Max.Z ) );
 
       return mergedResult;
     }
