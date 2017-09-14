@@ -6,6 +6,8 @@ Shared by Kevin [@kelau1993](https://forums.autodesk.com/t5/user/viewprofilepage
 the [Revit API discussion forum](http://forums.autodesk.com/t5/revit-api-forum/bd-p/160) thread
 on [family bounding box in family document](https://forums.autodesk.com/t5/revit-api-forum/family-boundingbox-in-family-document/m-p/6946049).
 
+Later: [enhanced taking instances into account](http://thebuildingcoder.typepad.com/blog/2017/08/bim-360-hackathon-and-bounding-box-determination.html#5).
+
 
 ## Authors
 
